@@ -1,0 +1,1488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Velox Core — Gaming Performance Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════
+   ROOT & RESET
+═══════════════════════════════════════════════ */
+:root {
+  --bg:     #020509;
+  --bg2:    #04080f;
+  --bg3:    #060c18;
+  --card:   #080e1e;
+  --card2:  #0a1225;
+  --b1:     #0f1e38;
+  --b2:     #162d52;
+  --cyan:   #00d4ff;
+  --cyan2:  #0099cc;
+  --cyan3:  #003344;
+  --red:    #ff2255;
+  --green:  #00ff88;
+  --gold:   #ffd700;
+  --purp:   #8822ff;
+  --ora:    #ff6600;
+  --white:  #eef6ff;
+  --txt:    #a8c8ee;
+  --txt2:   #4a6888;
+  --mu:     #1a3050;
+  --mu2:    #0a1828;
+  --font-head: 'Orbitron', monospace;
+  --font-body: 'Rajdhani', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;overflow-x:hidden}
+body{
+  background:var(--bg);
+  color:var(--txt);
+  font-family:var(--font-body);
+  font-size:17px;
+  line-height:1.6;
+  overflow-x:hidden;
+}
+a{color:inherit;text-decoration:none}
+img{max-width:100%;display:block}
+
+/* ═══════════════════════════════════════════════
+   CURSOR
+═══════════════════════════════════════════════ */
+*, *::before, *::after { cursor: none !important; }
+#cursor {
+  position:fixed; width:12px; height:12px;
+  background:var(--cyan); border-radius:50%;
+  pointer-events:none; z-index:99999;
+  transform:translate(-50%,-50%);
+  transition:transform .08s, width .2s, height .2s, opacity .2s;
+  mix-blend-mode:screen;
+}
+#cursor-ring {
+  position:fixed; width:36px; height:36px;
+  border:1px solid var(--cyan); border-radius:50%;
+  pointer-events:none; z-index:99998;
+  transform:translate(-50%,-50%);
+  transition:all .18s cubic-bezier(.2,1,.4,1);
+  opacity:.5;
+}
+body:has(a:hover) #cursor { transform:translate(-50%,-50%) scale(2.5); opacity:.6; }
+body:has(button:hover) #cursor { transform:translate(-50%,-50%) scale(2.5); opacity:.6; }
+
+/* ═══════════════════════════════════════════════
+   NOISE OVERLAY
+═══════════════════════════════════════════════ */
+body::before {
+  content:''; position:fixed; inset:0; z-index:0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.03'/%3E%3C/svg%3E");
+  pointer-events:none; opacity:.4;
+}
+
+/* ═══════════════════════════════════════════════
+   NAV
+═══════════════════════════════════════════════ */
+nav {
+  position:fixed; top:0; left:0; right:0; z-index:1000;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 48px; height:68px;
+  background:rgba(2,5,9,.85);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--b1);
+  transition:all .3s;
+}
+nav.scrolled { border-bottom-color:var(--cyan3); box-shadow:0 0 40px rgba(0,212,255,.06); }
+.nav-logo {
+  font-family:var(--font-head);
+  font-size:1.3rem; font-weight:800;
+  letter-spacing:.15em;
+  display:flex; align-items:center; gap:12px;
+}
+.nav-logo span { color:var(--cyan); }
+.logo-hex {
+  width:36px; height:36px;
+  position:relative; display:flex; align-items:center; justify-content:center;
+}
+.logo-hex svg { animation:spin-slow 8s linear infinite; }
+@keyframes spin-slow { to { transform:rotate(360deg); } }
+.nav-links {
+  display:flex; gap:4px; list-style:none;
+}
+.nav-links a {
+  padding:8px 18px; border-radius:4px;
+  font-family:var(--font-body); font-size:.95rem; font-weight:600;
+  letter-spacing:.08em; color:var(--txt2);
+  transition:color .2s, background .2s;
+  text-transform:uppercase;
+}
+.nav-links a:hover, .nav-links a.active { color:var(--cyan); background:rgba(0,212,255,.06); }
+.nav-cta {
+  background:var(--cyan); color:var(--bg) !important;
+  padding:10px 24px !important; border-radius:4px;
+  font-weight:700 !important;
+  border:1px solid transparent;
+  transition:all .2s !important;
+}
+.nav-cta:hover { background:transparent !important; color:var(--cyan) !important; border-color:var(--cyan) !important; }
+.nav-right { display:flex; align-items:center; gap:16px; }
+.nav-version { font-family:var(--font-mono); font-size:.7rem; color:var(--txt2); }
+
+/* ═══════════════════════════════════════════════
+   PAGES
+═══════════════════════════════════════════════ */
+.page { display:none; min-height:100vh; padding-top:68px; }
+.page.active { display:block; }
+
+/* ═══════════════════════════════════════════════
+   HERO
+═══════════════════════════════════════════════ */
+.hero {
+  position:relative; min-height:100vh;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  padding:80px 24px 60px;
+  overflow:hidden;
+}
+/* Grid lines bg */
+.hero::before {
+  content:''; position:absolute; inset:0;
+  background-image:
+    linear-gradient(var(--b1) 1px, transparent 1px),
+    linear-gradient(90deg, var(--b1) 1px, transparent 1px);
+  background-size:60px 60px;
+  opacity:.18;
+  mask-image:radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
+}
+/* Glow orbs */
+.hero-orb {
+  position:absolute; border-radius:50%;
+  filter:blur(90px); pointer-events:none; animation:orb-drift 12s ease-in-out infinite;
+}
+.hero-orb-1 { width:500px;height:500px;background:rgba(0,212,255,.07);top:-100px;left:-100px; }
+.hero-orb-2 { width:400px;height:400px;background:rgba(136,34,255,.06);bottom:0;right:-80px;animation-delay:-5s; }
+.hero-orb-3 { width:300px;height:300px;background:rgba(0,255,136,.04);top:50%;left:60%;animation-delay:-8s; }
+@keyframes orb-drift {
+  0%,100%{transform:translate(0,0)}
+  33%{transform:translate(30px,-20px)}
+  66%{transform:translate(-20px,15px)}
+}
+
+.hero-badge {
+  display:inline-flex; align-items:center; gap:8px;
+  padding:6px 18px; border-radius:100px;
+  border:1px solid var(--b2);
+  background:rgba(0,212,255,.05);
+  font-family:var(--font-mono); font-size:.75rem;
+  color:var(--cyan); letter-spacing:.12em;
+  margin-bottom:28px;
+  animation:fade-up .8s ease both;
+}
+.badge-dot { width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse-dot 2s ease infinite; }
+@keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.6)} }
+
+.hero-title {
+  font-family:var(--font-head);
+  font-size:clamp(3rem,7vw,6.5rem);
+  font-weight:900;
+  letter-spacing:.05em;
+  line-height:.95;
+  text-align:center;
+  margin-bottom:24px;
+  animation:fade-up .9s .1s ease both;
+}
+.hero-title .line1 { color:var(--white); display:block; }
+.hero-title .line2 { color:var(--cyan); display:block; position:relative; }
+.hero-title .line2::after {
+  content:''; position:absolute; bottom:-4px; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent,var(--cyan),transparent);
+  animation:scan-line 3s ease-in-out infinite;
+}
+@keyframes scan-line { 0%,100%{opacity:.3;transform:scaleX(.3)} 50%{opacity:1;transform:scaleX(1)} }
+
+.hero-sub {
+  font-size:1.15rem; color:var(--txt2); text-align:center;
+  max-width:600px; margin-bottom:48px; font-weight:400;
+  animation:fade-up 1s .2s ease both;
+}
+
+.hero-btns {
+  display:flex; gap:16px; flex-wrap:wrap; justify-content:center;
+  margin-bottom:80px;
+  animation:fade-up 1s .3s ease both;
+}
+.btn-primary {
+  display:flex; align-items:center; gap:10px;
+  padding:16px 36px; border-radius:6px;
+  background:var(--cyan); color:var(--bg);
+  font-family:var(--font-head); font-size:.85rem;
+  font-weight:700; letter-spacing:.15em;
+  border:2px solid transparent;
+  transition:all .25s; position:relative; overflow:hidden;
+}
+.btn-primary::before {
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);
+  transform:translateX(-100%); transition:transform .4s;
+}
+.btn-primary:hover::before { transform:translateX(100%); }
+.btn-primary:hover { background:transparent; color:var(--cyan); border-color:var(--cyan); box-shadow:0 0 30px rgba(0,212,255,.3); }
+.btn-outline {
+  display:flex; align-items:center; gap:10px;
+  padding:16px 36px; border-radius:6px;
+  background:transparent; color:var(--txt);
+  font-family:var(--font-head); font-size:.85rem;
+  font-weight:700; letter-spacing:.15em;
+  border:2px solid var(--b2);
+  transition:all .25s;
+}
+.btn-outline:hover { border-color:var(--cyan); color:var(--cyan); background:rgba(0,212,255,.04); }
+
+/* Stats bar */
+.hero-stats {
+  display:flex; gap:0; border:1px solid var(--b1);
+  border-radius:8px; overflow:hidden;
+  background:rgba(8,14,30,.8);
+  backdrop-filter:blur(10px);
+  animation:fade-up 1s .4s ease both;
+}
+.stat-item {
+  padding:20px 40px; text-align:center;
+  border-right:1px solid var(--b1);
+  position:relative;
+}
+.stat-item:last-child { border-right:none; }
+.stat-num {
+  font-family:var(--font-head);
+  font-size:1.8rem; font-weight:800;
+  color:var(--cyan); display:block;
+}
+.stat-lbl { font-size:.8rem; color:var(--txt2); letter-spacing:.1em; text-transform:uppercase; }
+
+/* Scroll indicator */
+.scroll-ind {
+  position:absolute; bottom:32px; left:50%; transform:translateX(-50%);
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  font-family:var(--font-mono); font-size:.65rem; color:var(--txt2); letter-spacing:.2em;
+  animation:fade-up 1s .6s ease both;
+}
+.scroll-line {
+  width:1px; height:40px; background:linear-gradient(var(--cyan),transparent);
+  animation:scroll-bounce 2s ease-in-out infinite;
+}
+@keyframes scroll-bounce { 0%,100%{opacity:.3;transform:scaleY(.5) translateY(-10px)} 50%{opacity:1;transform:scaleY(1) translateY(0)} }
+
+/* ═══════════════════════════════════════════════
+   FEATURES SECTION
+═══════════════════════════════════════════════ */
+.section { padding:100px 48px; position:relative; }
+.section-label {
+  font-family:var(--font-mono); font-size:.75rem;
+  color:var(--cyan); letter-spacing:.25em; text-transform:uppercase;
+  margin-bottom:12px; display:flex; align-items:center; gap:12px;
+}
+.section-label::before {
+  content:''; width:32px; height:1px; background:var(--cyan);
+}
+.section-title {
+  font-family:var(--font-head); font-size:clamp(1.8rem,4vw,3rem);
+  font-weight:800; color:var(--white); letter-spacing:.05em;
+  margin-bottom:16px; line-height:1.1;
+}
+.section-sub { color:var(--txt2); max-width:560px; font-size:1.05rem; }
+
+.features-grid {
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+  gap:1px; margin-top:64px;
+  border:1px solid var(--b1);
+  border-radius:12px; overflow:hidden;
+  background:var(--b1);
+}
+.feat-card {
+  background:var(--card); padding:40px 36px;
+  transition:background .3s, transform .3s;
+  position:relative; overflow:hidden;
+}
+.feat-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:var(--cyan); transform:scaleX(0); transition:transform .3s;
+  transform-origin:left;
+}
+.feat-card:hover { background:var(--card2); }
+.feat-card:hover::before { transform:scaleX(1); }
+.feat-icon {
+  width:52px; height:52px; border-radius:10px;
+  background:rgba(0,212,255,.08); border:1px solid var(--b2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.5rem; margin-bottom:20px;
+  transition:all .3s;
+}
+.feat-card:hover .feat-icon { background:rgba(0,212,255,.15); border-color:var(--cyan); box-shadow:0 0 20px rgba(0,212,255,.2); }
+.feat-name { font-family:var(--font-head); font-size:.95rem; font-weight:700; color:var(--white); letter-spacing:.1em; margin-bottom:10px; }
+.feat-desc { color:var(--txt2); font-size:.95rem; line-height:1.6; }
+.feat-tag {
+  display:inline-block; margin-top:16px;
+  padding:3px 10px; border-radius:100px;
+  font-family:var(--font-mono); font-size:.65rem;
+  letter-spacing:.1em;
+}
+.tag-free { background:rgba(0,255,136,.08); color:var(--green); border:1px solid rgba(0,255,136,.2); }
+.tag-pro  { background:rgba(255,215,0,.08);  color:var(--gold);  border:1px solid rgba(255,215,0,.2); }
+
+/* ═══════════════════════════════════════════════
+   DEMO TERMINAL
+═══════════════════════════════════════════════ */
+.demo-section {
+  padding:100px 48px;
+  display:grid; grid-template-columns:1fr 1fr; gap:80px; align-items:center;
+}
+.terminal-wrap {
+  position:relative;
+}
+.terminal-glow {
+  position:absolute; inset:-20px;
+  background:radial-gradient(ellipse at center, rgba(0,212,255,.08) 0%, transparent 70%);
+  pointer-events:none;
+}
+.terminal {
+  background:var(--bg2); border:1px solid var(--b2);
+  border-radius:12px; overflow:hidden;
+  font-family:var(--font-mono); font-size:.82rem;
+  box-shadow:0 40px 80px rgba(0,0,0,.6), 0 0 0 1px var(--b1);
+}
+.term-bar {
+  display:flex; align-items:center; gap:8px;
+  padding:12px 16px; background:var(--card);
+  border-bottom:1px solid var(--b1);
+}
+.term-dot { width:10px;height:10px;border-radius:50%; }
+.term-dot:nth-child(1){background:#ff5f57}
+.term-dot:nth-child(2){background:#febc2e}
+.term-dot:nth-child(3){background:#28c840}
+.term-title { flex:1; text-align:center; color:var(--txt2); font-size:.75rem; }
+.term-body { padding:24px; min-height:280px; }
+.term-line { margin-bottom:4px; opacity:0; animation:term-appear .3s ease forwards; }
+.term-prompt { color:var(--cyan); }
+.term-cmd { color:var(--white); }
+.term-out { color:var(--txt2); padding-left:16px; }
+.term-ok  { color:var(--green); }
+.term-val { color:var(--gold); }
+.term-cursor { display:inline-block; width:8px; height:14px; background:var(--cyan); animation:blink .8s step-end infinite; vertical-align:middle; margin-left:2px; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+@keyframes term-appear { to{opacity:1} }
+
+/* Perf meters */
+.perf-meters { display:flex; flex-direction:column; gap:16px; margin-top:32px; }
+.meter-row { display:flex; align-items:center; gap:16px; }
+.meter-lbl { font-family:var(--font-mono); font-size:.75rem; color:var(--txt2); width:50px; text-align:right; }
+.meter-bg { flex:1; height:6px; background:var(--mu2); border-radius:3px; overflow:hidden; position:relative; }
+.meter-fill { height:100%; border-radius:3px; transition:width 2s cubic-bezier(.4,0,.2,1); }
+.meter-val { font-family:var(--font-mono); font-size:.75rem; color:var(--white); width:36px; }
+
+/* ═══════════════════════════════════════════════
+   DOWNLOAD PAGE
+═══════════════════════════════════════════════ */
+.dl-hero {
+  text-align:center; padding:80px 24px 60px;
+  position:relative; overflow:hidden;
+}
+.dl-hero::before {
+  content:''; position:absolute; inset:0;
+  background:radial-gradient(ellipse 60% 60% at 50% 0%, rgba(0,212,255,.06) 0%, transparent 70%);
+  pointer-events:none;
+}
+.dl-card {
+  max-width:560px; margin:0 auto 60px;
+  background:var(--card); border:1px solid var(--b2);
+  border-radius:16px; overflow:hidden;
+  box-shadow:0 40px 80px rgba(0,0,0,.5), 0 0 0 1px rgba(0,212,255,.05);
+  position:relative;
+}
+.dl-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent,var(--cyan),transparent);
+}
+.dl-card-head {
+  padding:36px; display:flex; align-items:center; gap:24px;
+  border-bottom:1px solid var(--b1);
+}
+.dl-icon-wrap {
+  width:72px; height:72px; border-radius:16px;
+  background:linear-gradient(135deg,rgba(0,212,255,.15),rgba(0,212,255,.04));
+  border:1px solid var(--b2); display:flex; align-items:center; justify-content:center;
+  font-size:2.2rem; flex-shrink:0;
+}
+.dl-info h2 { font-family:var(--font-head); font-size:1.4rem; font-weight:800; color:var(--white); letter-spacing:.08em; margin-bottom:4px; }
+.dl-info p  { color:var(--txt2); font-size:.9rem; }
+.dl-meta { display:flex; gap:16px; margin-top:10px; }
+.dl-badge {
+  padding:3px 10px; border-radius:100px;
+  font-family:var(--font-mono); font-size:.65rem; letter-spacing:.1em;
+  background:rgba(0,212,255,.08); color:var(--cyan); border:1px solid var(--cyan3);
+}
+.dl-card-body { padding:36px; }
+.dl-req { margin-bottom:28px; }
+.dl-req-title { font-family:var(--font-mono); font-size:.7rem; color:var(--txt2); letter-spacing:.15em; text-transform:uppercase; margin-bottom:12px; }
+.dl-req-list { display:flex; flex-direction:column; gap:8px; }
+.dl-req-item {
+  display:flex; align-items:center; gap:12px;
+  padding:10px 14px; border-radius:6px;
+  background:var(--card2); border:1px solid var(--b1);
+  font-size:.9rem;
+}
+.req-ok  { color:var(--green); }
+.req-opt { color:var(--gold); }
+.dl-btn-wrap { display:flex; flex-direction:column; gap:12px; }
+.dl-main-btn {
+  display:flex; align-items:center; justify-content:center; gap:12px;
+  padding:18px; border-radius:8px;
+  background:var(--cyan); color:var(--bg);
+  font-family:var(--font-head); font-size:.9rem; font-weight:700; letter-spacing:.15em;
+  border:2px solid transparent; transition:all .25s; position:relative; overflow:hidden;
+}
+.dl-main-btn::before {
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);
+  transform:translateX(-100%); transition:.4s;
+}
+.dl-main-btn:hover::before { transform:translateX(100%); }
+.dl-main-btn:hover { background:transparent; color:var(--cyan); border-color:var(--cyan); box-shadow:0 0 40px rgba(0,212,255,.25); }
+.dl-sec-btn {
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  padding:14px; border-radius:8px;
+  background:transparent; color:var(--txt2);
+  font-size:.9rem; font-weight:600;
+  border:1px solid var(--b1); transition:all .25s;
+}
+.dl-sec-btn:hover { border-color:var(--b2); color:var(--txt); }
+
+.dl-steps {
+  max-width:700px; margin:0 auto;
+  display:grid; grid-template-columns:repeat(3,1fr); gap:24px;
+}
+.dl-step {
+  text-align:center; padding:32px 20px;
+  background:var(--card); border:1px solid var(--b1); border-radius:12px;
+  position:relative; transition:border-color .3s;
+}
+.dl-step:hover { border-color:var(--b2); }
+.dl-step-num {
+  font-family:var(--font-head); font-size:2.5rem; font-weight:900;
+  color:var(--b2); line-height:1; margin-bottom:16px;
+}
+.dl-step h3 { font-family:var(--font-head); font-size:.8rem; color:var(--white); letter-spacing:.1em; margin-bottom:8px; }
+.dl-step p { color:var(--txt2); font-size:.85rem; }
+.step-connector {
+  position:absolute; top:50%; right:-12px;
+  width:24px; height:1px; background:var(--b2); z-index:1;
+}
+
+/* ═══════════════════════════════════════════════
+   PRICING PAGE
+═══════════════════════════════════════════════ */
+.pricing-grid {
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:24px; max-width:1100px; margin:60px auto 0;
+}
+.price-card {
+  background:var(--card); border:1px solid var(--b1);
+  border-radius:16px; padding:40px 32px;
+  position:relative; overflow:hidden; transition:all .3s;
+}
+.price-card:hover { transform:translateY(-4px); box-shadow:0 20px 60px rgba(0,0,0,.4); }
+.price-card.featured {
+  border-color:var(--cyan); background:var(--card2);
+  box-shadow:0 0 60px rgba(0,212,255,.1);
+}
+.price-card.featured::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent,var(--cyan),transparent);
+}
+.price-popular {
+  position:absolute; top:20px; right:20px;
+  padding:4px 12px; border-radius:100px;
+  background:var(--cyan); color:var(--bg);
+  font-family:var(--font-mono); font-size:.65rem; font-weight:700; letter-spacing:.1em;
+}
+.price-plan { font-family:var(--font-mono); font-size:.75rem; color:var(--txt2); letter-spacing:.2em; text-transform:uppercase; margin-bottom:12px; }
+.price-amount {
+  display:flex; align-items:baseline; gap:4px; margin-bottom:8px;
+}
+.price-currency { font-family:var(--font-head); font-size:1.2rem; color:var(--txt2); }
+.price-num { font-family:var(--font-head); font-size:3.5rem; font-weight:900; color:var(--white); line-height:1; }
+.price-period { font-size:.9rem; color:var(--txt2); }
+.price-desc { color:var(--txt2); font-size:.9rem; margin-bottom:28px; padding-bottom:28px; border-bottom:1px solid var(--b1); }
+.price-features { display:flex; flex-direction:column; gap:12px; margin-bottom:32px; }
+.price-feat {
+  display:flex; align-items:center; gap:12px; font-size:.95rem;
+}
+.price-feat .check { color:var(--green); font-size:.8rem; }
+.price-feat .cross { color:var(--txt2); font-size:.8rem; opacity:.5; }
+.price-btn {
+  display:block; width:100%; padding:14px;
+  border-radius:8px; text-align:center;
+  font-family:var(--font-head); font-size:.8rem; font-weight:700; letter-spacing:.12em;
+  border:2px solid var(--b2); color:var(--txt2);
+  transition:all .25s;
+}
+.price-card.featured .price-btn {
+  background:var(--cyan); color:var(--bg); border-color:transparent;
+}
+.price-card.featured .price-btn:hover { background:transparent; color:var(--cyan); border-color:var(--cyan); }
+.price-btn:hover { border-color:var(--txt2); color:var(--white); }
+
+/* ═══════════════════════════════════════════════
+   DASHBOARD PAGE
+═══════════════════════════════════════════════ */
+.dash-layout {
+  display:grid; grid-template-columns:220px 1fr; min-height:calc(100vh - 68px);
+}
+.dash-sidebar {
+  background:var(--bg2); border-right:1px solid var(--b1);
+  padding:24px 0;
+}
+.dash-nav-item {
+  display:flex; align-items:center; gap:12px;
+  padding:12px 24px; color:var(--txt2); font-size:.9rem;
+  font-weight:600; letter-spacing:.05em; transition:all .2s;
+  position:relative;
+}
+.dash-nav-item:hover, .dash-nav-item.active {
+  color:var(--cyan); background:rgba(0,212,255,.06);
+}
+.dash-nav-item.active::before {
+  content:''; position:absolute; left:0; top:0; bottom:0; width:2px; background:var(--cyan);
+}
+.dash-nav-icon { font-size:1.1rem; width:20px; text-align:center; }
+.dash-main { padding:32px; overflow-y:auto; }
+.dash-header { margin-bottom:28px; }
+.dash-title { font-family:var(--font-head); font-size:1.4rem; color:var(--white); font-weight:700; letter-spacing:.08em; }
+.dash-sub { color:var(--txt2); font-size:.9rem; margin-top:4px; }
+.dash-cards { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+.dash-card {
+  background:var(--card); border:1px solid var(--b1);
+  border-radius:10px; padding:20px;
+  transition:border-color .3s;
+}
+.dash-card:hover { border-color:var(--b2); }
+.dc-label { font-family:var(--font-mono); font-size:.65rem; color:var(--txt2); letter-spacing:.15em; text-transform:uppercase; margin-bottom:8px; }
+.dc-value { font-family:var(--font-head); font-size:1.8rem; font-weight:800; line-height:1; margin-bottom:4px; }
+.dc-sub { font-size:.8rem; color:var(--txt2); }
+.dash-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px; }
+.dash-section {
+  background:var(--card); border:1px solid var(--b1); border-radius:10px; padding:20px;
+}
+.dash-sec-title { font-family:var(--font-mono); font-size:.7rem; color:var(--txt2); letter-spacing:.15em; text-transform:uppercase; margin-bottom:16px; }
+.key-row {
+  display:flex; align-items:center; gap:12px; padding:10px 0;
+  border-bottom:1px solid var(--b1); font-size:.85rem;
+}
+.key-row:last-child { border-bottom:none; }
+.key-code { font-family:var(--font-mono); color:var(--cyan); flex:1; font-size:.8rem; }
+.key-status { padding:2px 8px; border-radius:100px; font-family:var(--font-mono); font-size:.6rem; letter-spacing:.08em; }
+.ks-active { background:rgba(0,255,136,.1); color:var(--green); border:1px solid rgba(0,255,136,.2); }
+.ks-used   { background:rgba(255,34,85,.1);  color:var(--red);   border:1px solid rgba(255,34,85,.2); }
+.ks-exp    { background:rgba(255,102,0,.1);  color:var(--ora);   border:1px solid rgba(255,102,0,.2); }
+.chart-bar-wrap { display:flex; flex-direction:column; gap:10px; }
+.chart-bar-row { display:flex; align-items:center; gap:12px; }
+.cb-label { font-size:.8rem; color:var(--txt2); width:60px; text-align:right; }
+.cb-track { flex:1; height:8px; background:var(--mu2); border-radius:4px; overflow:hidden; }
+.cb-fill  { height:100%; border-radius:4px; }
+.cb-val   { font-family:var(--font-mono); font-size:.75rem; color:var(--white); width:36px; }
+.gen-btn {
+  width:100%; padding:12px; border-radius:6px; margin-top:16px;
+  background:rgba(0,212,255,.08); color:var(--cyan);
+  font-family:var(--font-head); font-size:.75rem; font-weight:700; letter-spacing:.12em;
+  border:1px solid var(--b2); transition:all .25s;
+}
+.gen-btn:hover { background:rgba(0,212,255,.15); border-color:var(--cyan); box-shadow:0 0 20px rgba(0,212,255,.15); }
+
+/* ═══════════════════════════════════════════════
+   BLOG PAGE
+═══════════════════════════════════════════════ */
+.blog-grid {
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr));
+  gap:24px; margin-top:60px;
+}
+.blog-card {
+  background:var(--card); border:1px solid var(--b1);
+  border-radius:12px; overflow:hidden;
+  transition:all .3s;
+}
+.blog-card:hover { transform:translateY(-4px); border-color:var(--b2); box-shadow:0 20px 50px rgba(0,0,0,.4); }
+.blog-thumb {
+  height:180px; position:relative; overflow:hidden;
+  background:var(--card2); display:flex; align-items:center; justify-content:center;
+  font-size:3rem;
+}
+.blog-thumb-bg {
+  position:absolute; inset:0;
+  background:linear-gradient(135deg,var(--card2),var(--bg));
+}
+.blog-thumb-grid {
+  position:absolute; inset:0;
+  background-image:linear-gradient(var(--b1) 1px,transparent 1px),linear-gradient(90deg,var(--b1) 1px,transparent 1px);
+  background-size:30px 30px; opacity:.3;
+}
+.blog-thumb-icon { position:relative; z-index:1; }
+.blog-cat {
+  position:absolute; top:12px; left:12px;
+  padding:3px 10px; border-radius:100px;
+  font-family:var(--font-mono); font-size:.6rem; letter-spacing:.1em;
+  background:rgba(0,212,255,.15); color:var(--cyan); border:1px solid var(--cyan3);
+  z-index:2;
+}
+.blog-body { padding:24px; }
+.blog-date { font-family:var(--font-mono); font-size:.65rem; color:var(--txt2); margin-bottom:10px; }
+.blog-title { font-family:var(--font-head); font-size:1rem; color:var(--white); font-weight:700; letter-spacing:.05em; margin-bottom:10px; line-height:1.4; }
+.blog-excerpt { color:var(--txt2); font-size:.88rem; line-height:1.6; }
+.blog-footer { display:flex; align-items:center; justify-content:space-between; margin-top:16px; padding-top:16px; border-top:1px solid var(--b1); }
+.blog-read { font-family:var(--font-mono); font-size:.65rem; color:var(--txt2); }
+.blog-link { font-family:var(--font-mono); font-size:.7rem; color:var(--cyan); letter-spacing:.08em; }
+
+/* ═══════════════════════════════════════════════
+   CONTACT PAGE
+═══════════════════════════════════════════════ */
+.contact-grid { display:grid; grid-template-columns:1fr 1.4fr; gap:60px; max-width:1000px; margin:60px auto 0; align-items:start; }
+.contact-info { display:flex; flex-direction:column; gap:24px; }
+.contact-item {
+  display:flex; gap:20px; align-items:flex-start;
+  padding:24px; background:var(--card); border:1px solid var(--b1); border-radius:10px;
+  transition:border-color .3s;
+}
+.contact-item:hover { border-color:var(--b2); }
+.contact-icon-wrap {
+  width:44px; height:44px; border-radius:10px; flex-shrink:0;
+  background:rgba(0,212,255,.08); border:1px solid var(--b2);
+  display:flex; align-items:center; justify-content:center; font-size:1.2rem;
+}
+.contact-item h4 { font-family:var(--font-head); font-size:.8rem; color:var(--white); letter-spacing:.1em; margin-bottom:4px; }
+.contact-item p  { font-size:.88rem; color:var(--txt2); }
+.contact-item a  { color:var(--cyan); font-family:var(--font-mono); font-size:.85rem; }
+.contact-form { background:var(--card); border:1px solid var(--b1); border-radius:16px; padding:40px; position:relative; overflow:hidden; }
+.contact-form::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--cyan),transparent); }
+.form-title { font-family:var(--font-head); font-size:1.1rem; color:var(--white); font-weight:700; letter-spacing:.08em; margin-bottom:28px; }
+.form-row { margin-bottom:20px; }
+.form-label { display:block; font-family:var(--font-mono); font-size:.65rem; color:var(--txt2); letter-spacing:.15em; text-transform:uppercase; margin-bottom:8px; }
+.form-input, .form-textarea, .form-select {
+  width:100%; padding:13px 16px; border-radius:6px;
+  background:var(--bg); color:var(--white);
+  border:1px solid var(--b2); outline:none;
+  font-family:var(--font-body); font-size:1rem;
+  transition:border-color .25s, box-shadow .25s;
+}
+.form-input:focus, .form-textarea:focus, .form-select:focus {
+  border-color:var(--cyan); box-shadow:0 0 0 3px rgba(0,212,255,.1);
+}
+.form-textarea { min-height:120px; resize:vertical; }
+.form-select { appearance:none; }
+.form-submit {
+  width:100%; padding:16px; border-radius:8px;
+  background:var(--cyan); color:var(--bg);
+  font-family:var(--font-head); font-size:.85rem; font-weight:700; letter-spacing:.15em;
+  border:2px solid transparent; transition:all .25s; position:relative; overflow:hidden;
+}
+.form-submit::before { content:''; position:absolute; inset:0; background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent); transform:translateX(-100%); transition:.4s; }
+.form-submit:hover::before { transform:translateX(100%); }
+.form-submit:hover { background:transparent; color:var(--cyan); border-color:var(--cyan); }
+
+/* ═══════════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════════ */
+footer {
+  padding:60px 48px 32px;
+  border-top:1px solid var(--b1);
+  background:var(--bg2);
+}
+.footer-grid { display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:48px; margin-bottom:48px; }
+.footer-brand p { color:var(--txt2); font-size:.9rem; margin-top:12px; max-width:280px; line-height:1.7; }
+.footer-col h4 { font-family:var(--font-head); font-size:.75rem; font-weight:700; color:var(--white); letter-spacing:.15em; margin-bottom:16px; }
+.footer-col ul { list-style:none; display:flex; flex-direction:column; gap:10px; }
+.footer-col a { color:var(--txt2); font-size:.9rem; transition:color .2s; }
+.footer-col a:hover { color:var(--cyan); }
+.footer-bottom { display:flex; justify-content:space-between; align-items:center; padding-top:24px; border-top:1px solid var(--b1); }
+.footer-copy { font-family:var(--font-mono); font-size:.7rem; color:var(--txt2); }
+.footer-social { display:flex; gap:12px; }
+.social-btn {
+  width:36px; height:36px; border-radius:8px;
+  background:var(--card); border:1px solid var(--b1);
+  display:flex; align-items:center; justify-content:center;
+  font-size:.9rem; color:var(--txt2); transition:all .2s;
+}
+.social-btn:hover { border-color:var(--cyan); color:var(--cyan); background:rgba(0,212,255,.06); }
+
+/* ═══════════════════════════════════════════════
+   ANIMATIONS
+═══════════════════════════════════════════════ */
+@keyframes fade-up { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+@keyframes shake {
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-8px)}
+  40%{transform:translateX(8px)}
+  60%{transform:translateX(-5px)}
+  80%{transform:translateX(5px)}
+}
+.reveal { opacity:0; transform:translateY(30px); transition:opacity .7s ease, transform .7s ease; }
+.reveal.visible { opacity:1; transform:translateY(0); }
+
+/* ═══════════════════════════════════════════════
+   SCROLLBAR
+═══════════════════════════════════════════════ */
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:var(--bg); }
+::-webkit-scrollbar-thumb { background:var(--b2); border-radius:2px; }
+::-webkit-scrollbar-thumb:hover { background:var(--cyan); }
+</style>
+</head>
+<body>
+
+<!-- CURSOR -->
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<!-- ═══════════════════════════════ NAV ═══ -->
+<nav id="nav">
+  <div class="nav-logo">
+    <div class="logo-hex">
+      <svg width="36" height="36" viewBox="0 0 36 36">
+        <polygon points="18,2 32,10 32,26 18,34 4,26 4,10" fill="#0a1225" stroke="#00d4ff" stroke-width="1.5"/>
+        <polygon points="18,8 27,13 27,23 18,28 9,23 9,13" fill="none" stroke="#162d52" stroke-width="1"/>
+        <text x="18" y="22" text-anchor="middle" fill="#00d4ff" font-family="Orbitron" font-size="11" font-weight="800">V</text>
+      </svg>
+    </div>
+    VELOX <span>CORE</span>
+  </div>
+  <ul class="nav-links">
+    <li><a href="#" class="active" onclick="showPage('home',this)">Home</a></li>
+    <li><a href="#" onclick="showPage('download',this)">Download</a></li>
+    <li><a href="#" onclick="showPage('pricing',this)">Pricing</a></li>
+    <li><a href="#" onclick="showPage('dashboard',this);setTimeout(checkAdminSession,50)">Dashboard</a></li>
+    <li><a href="#" onclick="showPage('blog',this)">Blog</a></li>
+    <li><a href="#" onclick="showPage('contact',this)">Contact</a></li>
+  </ul>
+  <div class="nav-right">
+    <span class="nav-version">v5.0</span>
+    <a href="#" class="nav-links"><a href="#" class="nav-cta" onclick="showPage('download',document.querySelector('.nav-links a:nth-child(2)'))">Download Free</a></a>
+  </div>
+</nav>
+
+<!-- ════════════════════ HOME PAGE ════════════════════ -->
+<div id="page-home" class="page active">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-orb hero-orb-1"></div>
+    <div class="hero-orb hero-orb-2"></div>
+    <div class="hero-orb hero-orb-3"></div>
+
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      NOW LIVE — v5.0 RELEASED
+    </div>
+
+    <h1 class="hero-title">
+      <span class="line1">DOMINATE</span>
+      <span class="line2">EVERY FRAME</span>
+    </h1>
+
+    <p class="hero-sub">
+      The most advanced gaming optimizer. Real-time FPS boost, network optimization, and thermal control — all in one.
+    </p>
+
+    <div class="hero-btns">
+      <a href="#" class="btn-primary" onclick="showPage('download',null)">
+        ⬇ Download Free
+      </a>
+      <a href="#" class="btn-outline" onclick="showPage('pricing',null)">
+        💎 Go Premium
+      </a>
+    </div>
+
+    <div class="hero-stats">
+      <div class="stat-item">
+        <span class="stat-num" id="cnt-users">0</span>
+        <span class="stat-lbl">Active Users</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num" id="cnt-fps">0</span>
+        <span class="stat-lbl">Avg FPS Gain</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num" id="cnt-ping">0</span>
+        <span class="stat-lbl">Ping Reduction</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num" id="cnt-rating">0</span>
+        <span class="stat-lbl">User Rating</span>
+      </div>
+    </div>
+
+    <div class="scroll-ind">
+      <div class="scroll-line"></div>
+      SCROLL
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="section">
+    <div class="section-label">FEATURES</div>
+    <h2 class="section-title">BUILT FOR<br>WINNERS</h2>
+    <p class="section-sub">Every tool you need to gain the competitive edge, engineered to be fast and precise.</p>
+    <div class="features-grid reveal">
+      <div class="feat-card">
+        <div class="feat-icon">⚡</div>
+        <div class="feat-name">AUTO BOOSTER</div>
+        <div class="feat-desc">One-click optimization. Kills background processes, cleans RAM, and maximizes your CPU priority.</div>
+        <span class="feat-tag tag-free">FREE</span>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📊</div>
+        <div class="feat-name">FPS MONITOR</div>
+        <div class="feat-desc">Live FPS, 1% lows, frametime, and bottleneck analysis. Know exactly what's slowing you down.</div>
+        <span class="feat-tag tag-free">FREE</span>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🌐</div>
+        <div class="feat-name">NETWORK OPTIMIZER</div>
+        <div class="feat-desc">DNS switching, TCP optimization, and real-time ping monitoring. Drop your latency instantly.</div>
+        <span class="feat-tag tag-free">FREE</span>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🖥</div>
+        <div class="feat-name">FPS OVERLAY</div>
+        <div class="feat-desc">Customizable always-on-top overlay. Show FPS, temps, ping — in any color, size, position.</div>
+        <span class="feat-tag tag-pro">PREMIUM</span>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🌡</div>
+        <div class="feat-name">THERMAL GUARD</div>
+        <div class="feat-desc">Monitor CPU and GPU temps in real-time. Auto-throttle before thermal damage occurs.</div>
+        <span class="feat-tag tag-free">FREE</span>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">⏺</div>
+        <div class="feat-name">GAME RECORDER</div>
+        <div class="feat-desc">Record your gameplay with manual region selection. Pick your game window and hit record.</div>
+        <span class="feat-tag tag-pro">PREMIUM</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- TERMINAL DEMO -->
+  <section class="demo-section reveal">
+    <div class="terminal-wrap">
+      <div class="terminal-glow"></div>
+      <div class="terminal">
+        <div class="term-bar">
+          <div class="term-dot"></div><div class="term-dot"></div><div class="term-dot"></div>
+          <div class="term-title">VELOX CORE — Live Output</div>
+        </div>
+        <div class="term-body" id="terminal-body"></div>
+      </div>
+      <div class="perf-meters" style="margin-top:20px">
+        <div class="meter-row">
+          <div class="meter-lbl">CPU</div>
+          <div class="meter-bg"><div class="meter-fill" id="m-cpu" style="width:0;background:var(--cyan)"></div></div>
+          <div class="meter-val" id="mv-cpu">--</div>
+        </div>
+        <div class="meter-row">
+          <div class="meter-lbl">GPU</div>
+          <div class="meter-bg"><div class="meter-fill" id="m-gpu" style="width:0;background:var(--red)"></div></div>
+          <div class="meter-val" id="mv-gpu">--</div>
+        </div>
+        <div class="meter-row">
+          <div class="meter-lbl">RAM</div>
+          <div class="meter-bg"><div class="meter-fill" id="m-ram" style="width:0;background:var(--green)"></div></div>
+          <div class="meter-val" id="mv-ram">--</div>
+        </div>
+        <div class="meter-row">
+          <div class="meter-lbl">PING</div>
+          <div class="meter-bg"><div class="meter-fill" id="m-ping" style="width:0;background:var(--gold)"></div></div>
+          <div class="meter-val" id="mv-ping">--</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="section-label">LIVE DEMO</div>
+      <h2 class="section-title">SEE IT IN<br>ACTION</h2>
+      <p class="section-sub" style="margin-bottom:32px">Real-time performance data. Watch Velox Core diagnose and optimize your system in seconds.</p>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;align-items:flex-start;gap:16px;padding:20px;background:var(--card);border:1px solid var(--b1);border-radius:10px">
+          <span style="font-size:1.5rem">⚡</span>
+          <div>
+            <div style="font-family:var(--font-head);font-size:.85rem;color:var(--white);font-weight:700;letter-spacing:.08em;margin-bottom:4px">INSTANT RESULTS</div>
+            <div style="color:var(--txt2);font-size:.88rem">Average users see +40 FPS and -30% ping within seconds of running Auto Boost.</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:16px;padding:20px;background:var(--card);border:1px solid var(--b1);border-radius:10px">
+          <span style="font-size:1.5rem">🛡</span>
+          <div>
+            <div style="font-family:var(--font-head);font-size:.85rem;color:var(--white);font-weight:700;letter-spacing:.08em;margin-bottom:4px">SAFE & REVERSIBLE</div>
+            <div style="color:var(--txt2);font-size:.88rem">All optimizations are non-destructive and can be reversed with one click.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="nav-logo" style="font-size:1.1rem">
+          <div class="logo-hex"><svg width="32" height="32" viewBox="0 0 36 36"><polygon points="18,2 32,10 32,26 18,34 4,26 4,10" fill="#0a1225" stroke="#00d4ff" stroke-width="1.5"/><text x="18" y="23" text-anchor="middle" fill="#00d4ff" font-family="Orbitron" font-size="11" font-weight="800">V</text></svg></div>
+          VELOX <span>CORE</span>
+        </div>
+        <p>The most advanced gaming performance suite. Built for competitive players who demand every advantage.</p>
+      </div>
+      <div class="footer-col">
+        <h4>PRODUCT</h4>
+        <ul>
+          <li><a href="#" onclick="showPage('download',null)">Download</a></li>
+          <li><a href="#" onclick="showPage('pricing',null)">Pricing</a></li>
+          <li><a href="#" onclick="showPage('blog',null)">Changelog</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>COMMUNITY</h4>
+        <ul>
+          <li><a href="#">Discord</a></li>
+          <li><a href="#">Telegram</a></li>
+          <li><a href="#">YouTube</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>SUPPORT</h4>
+        <ul>
+          <li><a href="#" onclick="showPage('contact',null)">Contact</a></li>
+          <li><a href="#">FAQ</a></li>
+          <li><a href="#">Bug Report</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2025 Velox Core. All rights reserved.</div>
+      <div class="footer-social">
+        <a href="#" class="social-btn">💬</a>
+        <a href="#" class="social-btn">📱</a>
+        <a href="#" class="social-btn">▶</a>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- ════════════════════ DOWNLOAD PAGE ════════════════════ -->
+<div id="page-download" class="page">
+  <div class="dl-hero">
+    <div class="section-label" style="justify-content:center">DOWNLOAD</div>
+    <h1 class="hero-title" style="font-size:clamp(2rem,5vw,4rem);margin-bottom:16px">GET VELOX CORE</h1>
+    <p style="color:var(--txt2);margin-bottom:48px">Free forever. Premium features unlock with a key.</p>
+
+    <div class="dl-card">
+      <div class="dl-card-head">
+        <div class="dl-icon-wrap">⚡</div>
+        <div class="dl-info">
+          <h2>Velox Core</h2>
+          <p>Gaming Performance Engine</p>
+          <div class="dl-meta">
+            <span class="dl-badge">v5.0</span>
+            <span class="dl-badge">Windows 10/11</span>
+            <span class="dl-badge">~80 MB</span>
+          </div>
+        </div>
+      </div>
+      <div class="dl-card-body">
+        <div class="dl-req">
+          <div class="dl-req-title">Requirements</div>
+          <div class="dl-req-list">
+            <div class="dl-req-item"><span class="req-ok">✓</span> Windows 10 / 11 (64-bit)</div>
+            <div class="dl-req-item"><span class="req-ok">✓</span> Python 3.10+ (included in installer)</div>
+            <div class="dl-req-item"><span class="req-ok">✓</span> 4 GB RAM minimum</div>
+            <div class="dl-req-item"><span class="req-opt">★</span> Run as Administrator for full features</div>
+          </div>
+        </div>
+        <div class="dl-btn-wrap">
+          <a href="#" class="dl-main-btn">⬇ DOWNLOAD VeloxCore_Setup.exe</a>
+          <a href="#" class="dl-sec-btn">📄 View Release Notes</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="dl-steps">
+      <div class="dl-step">
+        <div class="dl-step-num">01</div>
+        <h3>DOWNLOAD</h3>
+        <p>Download VeloxCore_Setup.exe</p>
+        <div class="step-connector"></div>
+      </div>
+      <div class="dl-step">
+        <div class="dl-step-num">02</div>
+        <h3>INSTALL</h3>
+        <p>Run as Administrator and follow the setup</p>
+        <div class="step-connector"></div>
+      </div>
+      <div class="dl-step">
+        <div class="dl-step-num">03</div>
+        <h3>DOMINATE</h3>
+        <p>Hit Auto Boost and start winning</p>
+      </div>
+    </div>
+  </div>
+  <footer style="margin-top:60px;padding:24px 48px;border-top:1px solid var(--b1);display:flex;justify-content:space-between;align-items:center;background:var(--bg2)">
+    <div class="footer-copy">© 2025 Velox Core</div>
+    <a href="#" class="footer-copy" style="color:var(--cyan)" onclick="showPage('home',null)">← Back to Home</a>
+  </footer>
+</div>
+
+<!-- ════════════════════ PRICING PAGE ════════════════════ -->
+<div id="page-pricing" class="page">
+  <section class="section" style="text-align:center">
+    <div class="section-label" style="justify-content:center">PRICING</div>
+    <h2 class="section-title">CHOOSE YOUR<br>LEVEL</h2>
+    <p class="section-sub" style="margin:0 auto">Start free. Unlock everything with Premium.</p>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <div class="price-plan">FREE</div>
+        <div class="price-amount"><span class="price-currency">$</span><span class="price-num">0</span></div>
+        <div class="price-desc">Everything you need to start boosting your performance.</div>
+        <div class="price-features">
+          <div class="price-feat"><span class="check">✓</span> Auto Booster</div>
+          <div class="price-feat"><span class="check">✓</span> FPS Monitor</div>
+          <div class="price-feat"><span class="check">✓</span> Network Optimizer</div>
+          <div class="price-feat"><span class="check">✓</span> Thermal Guard</div>
+          <div class="price-feat"><span class="cross">✕</span> <span style="opacity:.4">FPS Overlay</span></div>
+          <div class="price-feat"><span class="cross">✕</span> <span style="opacity:.4">Game Recorder</span></div>
+          <div class="price-feat"><span class="cross">✕</span> <span style="opacity:.4">COD Boost</span></div>
+        </div>
+        <a href="#" class="price-btn">Download Free</a>
+      </div>
+      <div class="price-card featured">
+        <div class="price-popular">MOST POPULAR</div>
+        <div class="price-plan">MONTHLY</div>
+        <div class="price-amount"><span class="price-currency">$</span><span class="price-num">4</span><span class="price-period">/mo</span></div>
+        <div class="price-desc">Full access to all features. Cancel anytime.</div>
+        <div class="price-features">
+          <div class="price-feat"><span class="check">✓</span> Everything in Free</div>
+          <div class="price-feat"><span class="check">✓</span> FPS Overlay Pro</div>
+          <div class="price-feat"><span class="check">✓</span> Game Recorder</div>
+          <div class="price-feat"><span class="check">✓</span> COD Auto Boost</div>
+          <div class="price-feat"><span class="check">✓</span> Stutter AI</div>
+          <div class="price-feat"><span class="check">✓</span> Cloud Sync</div>
+          <div class="price-feat"><span class="check">✓</span> Priority Support</div>
+        </div>
+        <a href="#" class="price-btn">Get Premium Key</a>
+      </div>
+      <div class="price-card">
+        <div class="price-plan">LIFETIME</div>
+        <div class="price-amount"><span class="price-currency">$</span><span class="price-num">19</span></div>
+        <div class="price-desc">Pay once, own it forever. Best value for serious players.</div>
+        <div class="price-features">
+          <div class="price-feat"><span class="check">✓</span> Everything in Monthly</div>
+          <div class="price-feat"><span class="check">✓</span> Lifetime updates</div>
+          <div class="price-feat"><span class="check">✓</span> Key Generator access</div>
+          <div class="price-feat"><span class="check">✓</span> Early access features</div>
+          <div class="price-feat"><span class="check">✓</span> VIP Discord role</div>
+          <div class="price-feat"><span class="check">✓</span> Reseller rights</div>
+          <div class="price-feat"><span class="check">✓</span> No recurring charges</div>
+        </div>
+        <a href="#" class="price-btn">Get Lifetime Key</a>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ════════════════════ DASHBOARD PAGE ════════════════════ -->
+<div id="page-dashboard" class="page">
+
+  <!-- LOGIN GATE -->
+  <div id="dash-login-gate" style="min-height:calc(100vh - 68px);display:flex;align-items:center;justify-content:center;background:var(--bg);position:relative;overflow:hidden;">
+    <div style="position:absolute;inset:0;background-image:linear-gradient(var(--b1) 1px,transparent 1px),linear-gradient(90deg,var(--b1) 1px,transparent 1px);background-size:60px 60px;opacity:.12;mask-image:radial-gradient(ellipse 70% 70% at 50% 50%,black 40%,transparent 100%);"></div>
+    <div style="position:relative;z-index:1;width:100%;max-width:420px;padding:24px;">
+      <div style="text-align:center;margin-bottom:36px;">
+        <svg width="56" height="56" viewBox="0 0 36 36" style="margin:0 auto 16px;">
+          <polygon points="18,2 32,10 32,26 18,34 4,26 4,10" fill="#0a1225" stroke="#00d4ff" stroke-width="1.5"/>
+          <polygon points="18,8 27,13 27,23 18,28 9,23 9,13" fill="none" stroke="#162d52" stroke-width="1"/>
+          <text x="18" y="23" text-anchor="middle" fill="#00d4ff" font-family="Orbitron" font-size="11" font-weight="800">V</text>
+        </svg>
+        <div style="font-family:var(--font-head);font-size:1.4rem;font-weight:800;color:var(--white);letter-spacing:.1em;">ADMIN PANEL</div>
+        <div style="font-family:var(--font-mono);font-size:.7rem;color:var(--txt2);margin-top:6px;letter-spacing:.15em;">RESTRICTED ACCESS</div>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--b2);border-radius:16px;overflow:hidden;box-shadow:0 40px 80px rgba(0,0,0,.5);">
+        <div style="height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);"></div>
+        <div style="padding:36px;">
+          <div style="margin-bottom:20px;">
+            <label style="display:block;font-family:var(--font-mono);font-size:.65rem;color:var(--txt2);letter-spacing:.15em;text-transform:uppercase;margin-bottom:8px;">USERNAME</label>
+            <input id="admin-user" type="text" placeholder="admin" style="width:100%;padding:13px 16px;border-radius:6px;background:var(--bg);color:var(--white);border:1px solid var(--b2);outline:none;font-family:var(--font-body);font-size:1rem;transition:border-color .25s;" onfocus="this.style.borderColor=getComputedStyle(document.documentElement).getPropertyValue('--cyan')" onblur="this.style.borderColor=getComputedStyle(document.documentElement).getPropertyValue('--b2')">
+          </div>
+          <div style="margin-bottom:8px;">
+            <label style="display:block;font-family:var(--font-mono);font-size:.65rem;color:var(--txt2);letter-spacing:.15em;text-transform:uppercase;margin-bottom:8px;">PASSWORD</label>
+            <input id="admin-pass" type="password" placeholder="••••••••" style="width:100%;padding:13px 16px;border-radius:6px;background:var(--bg);color:var(--white);border:1px solid var(--b2);outline:none;font-family:var(--font-body);font-size:1rem;transition:border-color .25s;" onfocus="this.style.borderColor=getComputedStyle(document.documentElement).getPropertyValue('--cyan')" onblur="this.style.borderColor=getComputedStyle(document.documentElement).getPropertyValue('--b2')" onkeydown="if(event.key==='Enter')adminLogin()">
+          </div>
+          <div id="login-err" style="font-family:var(--font-mono);font-size:.72rem;color:var(--red);min-height:20px;margin-bottom:16px;padding-left:4px;"></div>
+          <button onclick="adminLogin()" style="width:100%;padding:15px;border-radius:8px;background:var(--cyan);color:var(--bg);font-family:var(--font-head);font-size:.85rem;font-weight:700;letter-spacing:.15em;border:2px solid transparent;cursor:none;transition:all .25s;position:relative;overflow:hidden;" onmouseover="this.style.background='transparent';this.style.color='var(--cyan)';this.style.borderColor='var(--cyan)';" onmouseout="this.style.background='var(--cyan)';this.style.color='var(--bg)';this.style.borderColor='transparent';">
+            LOGIN →
+          </button>
+          <div style="text-align:center;margin-top:20px;font-family:var(--font-mono);font-size:.65rem;color:var(--txt2);">
+            🔒 Authorized personnel only
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:20px;">
+        <a href="#" onclick="showPage('home',null)" style="font-family:var(--font-mono);font-size:.7rem;color:var(--txt2);letter-spacing:.08em;">← Back to Home</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD CONTENT (hidden until login) -->
+  <div id="dash-content" style="display:none;">
+  <div class="dash-layout">
+    <div class="dash-sidebar">
+      <div style="padding:16px 24px 20px;border-bottom:1px solid var(--b1);margin-bottom:16px">
+        <div style="font-family:var(--font-mono);font-size:.65rem;color:var(--txt2);letter-spacing:.15em">ADMIN PANEL</div>
+      </div>
+      <div class="dash-nav-item active"><span class="dash-nav-icon">📊</span> Overview</div>
+      <div class="dash-nav-item" onclick="this.parentElement.querySelectorAll('.dash-nav-item').forEach(x=>x.classList.remove('active'));this.classList.add('active')"><span class="dash-nav-icon">💎</span> Keys</div>
+      <div class="dash-nav-item" onclick="this.parentElement.querySelectorAll('.dash-nav-item').forEach(x=>x.classList.remove('active'));this.classList.add('active')"><span class="dash-nav-icon">👥</span> Users</div>
+      <div class="dash-nav-item" onclick="this.parentElement.querySelectorAll('.dash-nav-item').forEach(x=>x.classList.remove('active'));this.classList.add('active')"><span class="dash-nav-icon">📈</span> Analytics</div>
+      <div class="dash-nav-item" onclick="this.parentElement.querySelectorAll('.dash-nav-item').forEach(x=>x.classList.remove('active'));this.classList.add('active')"><span class="dash-nav-icon">⚙</span> Settings</div>
+    </div>
+    <div class="dash-main">
+      <div class="dash-header">
+        <div class="dash-title">OVERVIEW</div>
+        <div class="dash-sub">Welcome back, Admin — here's what's happening</div>
+      </div>
+      <div class="dash-cards">
+        <div class="dash-card"><div class="dc-label">TOTAL KEYS</div><div class="dc-value" style="color:var(--cyan)">1,247</div><div class="dc-sub">+23 this week</div></div>
+        <div class="dash-card"><div class="dc-label">ACTIVE USERS</div><div class="dc-value" style="color:var(--green)">892</div><div class="dc-sub">Online now: 34</div></div>
+        <div class="dash-card"><div class="dc-label">REVENUE</div><div class="dc-value" style="color:var(--gold)">$3.8K</div><div class="dc-sub">This month</div></div>
+        <div class="dash-card"><div class="dc-label">DOWNLOADS</div><div class="dc-value" style="color:var(--purp)">12.4K</div><div class="dc-sub">All time</div></div>
+      </div>
+      <div class="dash-grid2">
+        <div class="dash-section">
+          <div class="dash-sec-title">RECENT KEYS</div>
+          <div class="key-row"><span class="key-code">VELOX-LIFE-A3X9-K2M7-P8Q1</span><span class="key-status ks-active">ACTIVE</span></div>
+          <div class="key-row"><span class="key-code">VELOX-MONT-B7Y2-L5N3-R4W6</span><span class="key-status ks-used">USED</span></div>
+          <div class="key-row"><span class="key-code">VELOX-WEEK-C1Z8-M4O9-S2V5</span><span class="key-status ks-active">ACTIVE</span></div>
+          <div class="key-row"><span class="key-code">VELOX-DAIL-D6X4-N7P2-T8U3</span><span class="key-status ks-exp">EXPIRED</span></div>
+          <div class="key-row"><span class="key-code">VELOX-LIFE-E9Y1-O3Q8-U5W7</span><span class="key-status ks-active">ACTIVE</span></div>
+          <button class="gen-btn" onclick="genKey()">⚡ GENERATE NEW KEY</button>
+          <div id="gen-out" style="font-family:var(--font-mono);font-size:.75rem;color:var(--cyan);margin-top:10px;padding:10px;background:var(--bg);border-radius:4px;display:none"></div>
+        </div>
+        <div class="dash-section">
+          <div class="dash-sec-title">DOWNLOADS THIS WEEK</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar-row"><div class="cb-label">Mon</div><div class="cb-track"><div class="cb-fill" style="width:72%;background:var(--cyan)"></div></div><div class="cb-val">361</div></div>
+            <div class="chart-bar-row"><div class="cb-label">Tue</div><div class="cb-track"><div class="cb-fill" style="width:55%;background:var(--cyan)"></div></div><div class="cb-val">275</div></div>
+            <div class="chart-bar-row"><div class="cb-label">Wed</div><div class="cb-track"><div class="cb-fill" style="width:90%;background:var(--cyan)"></div></div><div class="cb-val">450</div></div>
+            <div class="chart-bar-row"><div class="cb-label">Thu</div><div class="cb-track"><div class="cb-fill" style="width:68%;background:var(--cyan)"></div></div><div class="cb-val">340</div></div>
+            <div class="chart-bar-row"><div class="cb-label">Fri</div><div class="cb-track"><div class="cb-fill" style="width:100%;background:var(--green)"></div></div><div class="cb-val">512</div></div>
+            <div class="chart-bar-row"><div class="cb-label">Sat</div><div class="cb-track"><div class="cb-fill" style="width:84%;background:var(--cyan)"></div></div><div class="cb-val">420</div></div>
+            <div class="chart-bar-row"><div class="cb-label">Sun</div><div class="cb-track"><div class="cb-fill" style="width:60%;background:var(--cyan)"></div></div><div class="cb-val">300</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div><!-- /dash-content -->
+</div>
+
+<!-- ════════════════════ BLOG PAGE ════════════════════ -->
+<div id="page-blog" class="page">
+  <section class="section">
+    <div class="section-label">BLOG</div>
+    <h2 class="section-title">LATEST UPDATES</h2>
+    <p class="section-sub">Tips, updates, and gaming performance guides.</p>
+    <div class="blog-grid">
+      <div class="blog-card">
+        <div class="blog-thumb"><div class="blog-thumb-bg"></div><div class="blog-thumb-grid"></div><span class="blog-thumb-icon">⚡</span><span class="blog-cat">UPDATE</span></div>
+        <div class="blog-body">
+          <div class="blog-date">March 3, 2025</div>
+          <div class="blog-title">Velox Core v5.0 — Complete Rebuild</div>
+          <div class="blog-excerpt">We rebuilt Velox Core from the ground up. New Game Recorder, FPS Overlay Pro, real authentication system, and frameless design.</div>
+          <div class="blog-footer"><span class="blog-read">5 min read</span><a href="#" class="blog-link">READ MORE →</a></div>
+        </div>
+      </div>
+      <div class="blog-card">
+        <div class="blog-thumb"><div class="blog-thumb-bg"></div><div class="blog-thumb-grid"></div><span class="blog-thumb-icon">🎮</span><span class="blog-cat">GUIDE</span></div>
+        <div class="blog-body">
+          <div class="blog-date">Feb 28, 2025</div>
+          <div class="blog-title">How to Get +60 FPS in Call of Duty</div>
+          <div class="blog-excerpt">Step-by-step guide using Velox Core's COD Boost feature. Registry tweaks, service optimization, and network settings explained.</div>
+          <div class="blog-footer"><span class="blog-read">8 min read</span><a href="#" class="blog-link">READ MORE →</a></div>
+        </div>
+      </div>
+      <div class="blog-card">
+        <div class="blog-thumb"><div class="blog-thumb-bg"></div><div class="blog-thumb-grid"></div><span class="blog-thumb-icon">🌐</span><span class="blog-cat">TIPS</span></div>
+        <div class="blog-body">
+          <div class="blog-date">Feb 20, 2025</div>
+          <div class="blog-title">Best DNS Servers for Gaming in 2025</div>
+          <div class="blog-excerpt">Cloudflare vs Google vs Quad9 vs AdGuard — we tested them all. Here's which one gives the lowest ping for gaming.</div>
+          <div class="blog-footer"><span class="blog-read">4 min read</span><a href="#" class="blog-link">READ MORE →</a></div>
+        </div>
+      </div>
+      <div class="blog-card">
+        <div class="blog-thumb"><div class="blog-thumb-bg"></div><div class="blog-thumb-grid"></div><span class="blog-thumb-icon">🌡</span><span class="blog-cat">GUIDE</span></div>
+        <div class="blog-body">
+          <div class="blog-date">Feb 15, 2025</div>
+          <div class="blog-title">Why Your GPU Hits 95°C and How to Fix It</div>
+          <div class="blog-excerpt">Thermal throttling kills your FPS. Learn how Thermal Guard detects and prevents it automatically.</div>
+          <div class="blog-footer"><span class="blog-read">6 min read</span><a href="#" class="blog-link">READ MORE →</a></div>
+        </div>
+      </div>
+      <div class="blog-card">
+        <div class="blog-thumb"><div class="blog-thumb-bg"></div><div class="blog-thumb-grid"></div><span class="blog-thumb-icon">📊</span><span class="blog-cat">TIPS</span></div>
+        <div class="blog-body">
+          <div class="blog-date">Feb 10, 2025</div>
+          <div class="blog-title">Understanding 1% Low FPS and Why It Matters</div>
+          <div class="blog-excerpt">Average FPS doesn't tell the whole story. Here's why 1% lows are the most important metric for competitive gaming.</div>
+          <div class="blog-footer"><span class="blog-read">5 min read</span><a href="#" class="blog-link">READ MORE →</a></div>
+        </div>
+      </div>
+      <div class="blog-card">
+        <div class="blog-thumb"><div class="blog-thumb-bg"></div><div class="blog-thumb-grid"></div><span class="blog-thumb-icon">💎</span><span class="blog-cat">NEWS</span></div>
+        <div class="blog-body">
+          <div class="blog-date">Feb 5, 2025</div>
+          <div class="blog-title">Introducing Velox Premium — What's Included</div>
+          <div class="blog-excerpt">Full breakdown of every Premium feature: FPS Overlay Pro, Game Recorder, COD Boost, Stutter AI, and Cloud Sync.</div>
+          <div class="blog-footer"><span class="blog-read">3 min read</span><a href="#" class="blog-link">READ MORE →</a></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ════════════════════ CONTACT PAGE ════════════════════ -->
+<div id="page-contact" class="page">
+  <section class="section">
+    <div class="section-label">CONTACT</div>
+    <h2 class="section-title">GET IN TOUCH</h2>
+    <p class="section-sub">Questions, issues, or partnership requests — we respond fast.</p>
+    <div class="contact-grid">
+      <div class="contact-info">
+        <div class="contact-item">
+          <div class="contact-icon-wrap">💬</div>
+          <div>
+            <h4>DISCORD</h4>
+            <p>Fastest support. Join our server.</p>
+            <a href="#">discord.gg/veloxcore</a>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-icon-wrap">📱</div>
+          <div>
+            <h4>TELEGRAM</h4>
+            <p>Updates and key purchases.</p>
+            <a href="#">@VeloxCore</a>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-icon-wrap">📧</div>
+          <div>
+            <h4>EMAIL</h4>
+            <p>For business and partnerships.</p>
+            <a href="#">support@veloxcore.net</a>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-icon-wrap">▶</div>
+          <div>
+            <h4>YOUTUBE</h4>
+            <p>Tutorials and guides.</p>
+            <a href="#">youtube.com/@VeloxCore</a>
+          </div>
+        </div>
+      </div>
+      <div class="contact-form">
+        <div class="form-title">SEND A MESSAGE</div>
+        <div class="form-row">
+          <label class="form-label">Your Name</label>
+          <input class="form-input" type="text" placeholder="Enter your name">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Email</label>
+          <input class="form-input" type="email" placeholder="your@email.com">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Subject</label>
+          <select class="form-select">
+            <option>Technical Support</option>
+            <option>Premium Key Issue</option>
+            <option>Bug Report</option>
+            <option>Partnership</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Message</label>
+          <textarea class="form-textarea" placeholder="Describe your issue or question..."></textarea>
+        </div>
+        <button class="form-submit" onclick="this.textContent='✓ SENT!';setTimeout(()=>this.textContent='SEND MESSAGE',3000)">SEND MESSAGE</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+// ── CURSOR ──────────────────────────────────────────────────────
+const cur = document.getElementById('cursor');
+const ring = document.getElementById('cursor-ring');
+document.addEventListener('mousemove', e => {
+  cur.style.left  = e.clientX + 'px';
+  cur.style.top   = e.clientY + 'px';
+  ring.style.left = e.clientX + 'px';
+  ring.style.top  = e.clientY + 'px';
+});
+
+// ── NAV SCROLL ──────────────────────────────────────────────────
+window.addEventListener('scroll', () => {
+  document.getElementById('nav').classList.toggle('scrolled', scrollY > 40);
+});
+
+// ── PAGE ROUTER ─────────────────────────────────────────────────
+function showPage(id, linkEl) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+  if (linkEl) linkEl.classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ── COUNTER ANIMATION ───────────────────────────────────────────
+function animCount(id, target, suffix='', duration=2000) {
+  const el = document.getElementById(id);
+  const start = Date.now();
+  const tick = () => {
+    const p = Math.min((Date.now()-start)/duration, 1);
+    const ease = 1 - Math.pow(1-p, 3);
+    el.textContent = Math.round(ease * target) + suffix;
+    if (p < 1) requestAnimationFrame(tick);
+  };
+  tick();
+}
+setTimeout(() => {
+  animCount('cnt-users', 12400, '+');
+  animCount('cnt-fps',   40,    '+');
+  animCount('cnt-ping',  35,    '%');
+  animCount('cnt-rating',4.9,   '★', 1500);
+}, 500);
+
+// ── TERMINAL ANIMATION ──────────────────────────────────────────
+const termLines = [
+  { type:'prompt', text:'velox --scan' },
+  { type:'out',    text:'Scanning system...', delay:400 },
+  { type:'ok',     text:'[✓] CPU: Intel i7-12700K  —  28% load', delay:700 },
+  { type:'ok',     text:'[✓] GPU: RTX 3080  —  61% load', delay:900 },
+  { type:'val',    text:'[!] RAM: 14.2 GB used  —  88%', delay:1100 },
+  { type:'out',    text:'Running optimizations...', delay:1400 },
+  { type:'ok',     text:'[✓] Services stopped  —  freed 420MB RAM', delay:1800 },
+  { type:'ok',     text:'[✓] DNS → Cloudflare 1.1.1.1', delay:2100 },
+  { type:'ok',     text:'[✓] Game Mode enabled', delay:2400 },
+  { type:'ok',     text:'[✓] TCP optimized', delay:2700 },
+  { type:'prompt', text:'FPS before: 87  →  after: 134  (+54%)', delay:3200 },
+];
+const body = document.getElementById('terminal-body');
+const colors = { prompt:getComputedStyle(document.documentElement).getPropertyValue('--cyan'), out:'#4a6888', ok:'#00ff88', val:'#ffd700' };
+termLines.forEach((l, i) => {
+  setTimeout(() => {
+    const div = document.createElement('div');
+    div.className = 'term-line';
+    div.style.animationDelay = '0s';
+    div.style.color = colors[l.type] || '#a8c8ee';
+    div.textContent = l.type === 'prompt' ? '$ ' + l.text : '  ' + l.text;
+    body.appendChild(div);
+    body.scrollTop = body.scrollHeight;
+  }, l.delay || i * 300);
+});
+
+// Meters
+setTimeout(() => {
+  const meters = [
+    ['m-cpu','mv-cpu',28,'%'],
+    ['m-gpu','mv-gpu',61,'%'],
+    ['m-ram','mv-ram',88,'%'],
+    ['m-ping','mv-ping',22,'ms'],
+  ];
+  meters.forEach(([bid,vid,val,unit]) => {
+    document.getElementById(bid).style.width = val + '%';
+    document.getElementById(vid).textContent = val + unit;
+  });
+}, 500);
+
+// ── SCROLL REVEAL ───────────────────────────────────────────────
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold:.15 });
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+// ── ADMIN LOGIN ─────────────────────────────────────────────────
+// بيانات الدخول — غيّرها حسب رغبتك
+const ADMIN_CREDS = {
+  'admin':  'velox2025',
+  'velox':  'admin123',
+};
+
+function adminLogin() {
+  const user = document.getElementById('admin-user').value.trim().toLowerCase();
+  const pass = document.getElementById('admin-pass').value;
+  const err  = document.getElementById('login-err');
+
+  if (!user || !pass) {
+    err.textContent = 'Enter username and password';
+    shakeForm(); return;
+  }
+
+  if (ADMIN_CREDS[user] && ADMIN_CREDS[user] === pass) {
+    // Success
+    err.textContent = '';
+    document.getElementById('dash-login-gate').style.display = 'none';
+    document.getElementById('dash-content').style.display = 'block';
+    // Store session
+    sessionStorage.setItem('velox-admin', user);
+  } else {
+    err.textContent = '✕  Invalid credentials';
+    document.getElementById('admin-pass').value = '';
+    shakeForm();
+  }
+}
+
+function shakeForm() {
+  const form = document.querySelector('#dash-login-gate > div > div:last-of-type');
+  if (!form) return;
+  form.style.animation = 'none';
+  form.offsetHeight; // reflow
+  form.style.animation = 'shake .4s ease';
+}
+
+// Check session on page switch
+function checkAdminSession() {
+  if (sessionStorage.getItem('velox-admin')) {
+    document.getElementById('dash-login-gate').style.display = 'none';
+    document.getElementById('dash-content').style.display = 'block';
+  } else {
+    document.getElementById('dash-login-gate').style.display = 'flex';
+    document.getElementById('dash-content').style.display = 'none';
+    // Clear inputs
+    const u = document.getElementById('admin-user');
+    const p = document.getElementById('admin-pass');
+    if (u) u.value = '';
+    if (p) p.value = '';
+    const e = document.getElementById('login-err');
+    if (e) e.textContent = '';
+  }
+}
+
+// ── KEY GENERATOR ───────────────────────────────────────────────
+function genKey() {
+  const plans = ['LIFE','MONT','WEEK','DAIL'];
+  const plan = plans[Math.floor(Math.random()*4)];
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const seg = n => Array.from({length:n},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
+  const key = `VELOX-${plan}-${seg(4)}-${seg(4)}-${seg(4)}`;
+  const out = document.getElementById('gen-out');
+  out.style.display = 'block';
+  out.textContent = key;
+  navigator.clipboard?.writeText(key);
+}
+</script>
+</body>
+</html>
