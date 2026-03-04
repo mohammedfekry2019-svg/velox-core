@@ -714,6 +714,40 @@ footer {
 /* ═══════════════════════════════════════════════
    ANIMATIONS
 ═══════════════════════════════════════════════ */
+
+/* SOON OVERLAY */
+.soon-wrap { position:relative; overflow:hidden; }
+.soon-overlay {
+  position:absolute; inset:0; z-index:10;
+  backdrop-filter:blur(10px);
+  background:rgba(2,5,9,.75);
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:16px;
+}
+.soon-badge {
+  font-family:var(--font-head); font-size:2.5rem; font-weight:900;
+  color:var(--cyan); letter-spacing:.3em;
+  text-shadow:0 0 40px rgba(0,212,255,.6), 0 0 80px rgba(0,212,255,.3);
+  animation:soon-pulse 2.5s ease-in-out infinite;
+}
+.soon-sub {
+  font-family:var(--font-mono); font-size:.8rem;
+  color:var(--txt2); letter-spacing:.2em; text-transform:uppercase;
+}
+.soon-line {
+  width:80px; height:1px;
+  background:linear-gradient(90deg,transparent,var(--cyan),transparent);
+  animation:soon-scan 2s ease-in-out infinite;
+}
+@keyframes soon-pulse {
+  0%,100%{opacity:.7;text-shadow:0 0 20px rgba(0,212,255,.4)}
+  50%{opacity:1;text-shadow:0 0 60px rgba(0,212,255,.9),0 0 100px rgba(0,212,255,.4)}
+}
+@keyframes soon-scan {
+  0%,100%{transform:scaleX(.3);opacity:.3}
+  50%{transform:scaleX(1);opacity:1}
+}
+
 @keyframes fade-up { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
 @keyframes shake {
   0%,100%{transform:translateX(0)}
@@ -1002,8 +1036,8 @@ footer {
           </div>
         </div>
         <div class="dl-btn-wrap">
-          <a href="https://github.com/mohammedfekry2019-svg/velox-core/blob/main/Velox%20Core.rar" class="dl-main-btn">⬇ DOWNLOAD VeloxCore_Setup.exe</a>
-          <a href="https://github.com/mohammedfekry2019-svg/velox-core/blob/main/README.md" class="dl-sec-btn">📄 View Release Notes</a>
+          <a href="#" class="dl-main-btn">⬇ DOWNLOAD VeloxCore_Setup.exe</a>
+          <a href="#" class="dl-sec-btn">📄 View Release Notes</a>
         </div>
       </div>
     </div>
@@ -1035,7 +1069,8 @@ footer {
 </div>
 
 <!-- ════════════════════ PRICING PAGE ════════════════════ -->
-<div id="page-pricing" class="page">
+<div id="page-pricing" class="page soon-wrap">
+  <div class="soon-overlay"><div class="soon-line"></div><div class="soon-badge">COMING SOON</div><div class="soon-sub">Pricing plans launching soon</div><div class="soon-line"></div></div>
   <section class="section" style="text-align:center">
     <div class="section-label" style="justify-content:center">PRICING</div>
     <h2 class="section-title">CHOOSE YOUR<br>LEVEL</h2>
@@ -1136,58 +1171,131 @@ footer {
   <!-- DASHBOARD CONTENT (hidden until login) -->
   <div id="dash-content" style="display:none;">
   <div class="dash-layout">
+    <!-- SIDEBAR -->
     <div class="dash-sidebar">
       <div style="padding:16px 24px 20px;border-bottom:1px solid var(--b1);margin-bottom:16px">
         <div style="font-family:var(--font-mono);font-size:.65rem;color:var(--txt2);letter-spacing:.15em">ADMIN PANEL</div>
       </div>
-      <div class="dash-nav-item active"><span class="dash-nav-icon">📊</span> Overview</div>
-      <div class="dash-nav-item" onclick="this.parentElement.querySelectorAll('.dash-nav-item').forEach(x=>x.classList.remove('active'));this.classList.add('active')"><span class="dash-nav-icon">💎</span> Keys</div>
-      <div class="dash-nav-item" onclick="this.parentElement.querySelectorAll('.dash-nav-item').forEach(x=>x.classList.remove('active'));this.classList.add('active')"><span class="dash-nav-icon">👥</span> Users</div>
-      <div class="dash-nav-item" onclick="this.parentElement.querySelectorAll('.dash-nav-item').forEach(x=>x.classList.remove('active'));this.classList.add('active')"><span class="dash-nav-icon">📈</span> Analytics</div>
-      <div class="dash-nav-item" onclick="this.parentElement.querySelectorAll('.dash-nav-item').forEach(x=>x.classList.remove('active'));this.classList.add('active')"><span class="dash-nav-icon">⚙</span> Settings</div>
+      <div class="dash-nav-item active" onclick="dashSwitch(this,'overview')"><span class="dash-nav-icon">📊</span> Overview</div>
+      <div class="dash-nav-item" onclick="dashSwitch(this,'keys')"><span class="dash-nav-icon">💎</span> Keys</div>
+      <div class="dash-nav-item" onclick="dashSwitch(this,'users')"><span class="dash-nav-icon">👥</span> Users</div>
+      <div class="dash-nav-item" onclick="dashSwitch(this,'analytics')"><span class="dash-nav-icon">📈</span> Analytics</div>
+      <div class="dash-nav-item" onclick="dashSwitch(this,'settings')"><span class="dash-nav-icon">⚙</span> Settings</div>
+      <div style="position:absolute;bottom:20px;left:0;right:0;padding:0 16px">
+        <button onclick="adminLogout()" style="width:100%;padding:10px;border-radius:6px;background:rgba(255,34,85,.08);color:var(--red);font-family:var(--font-mono);font-size:.7rem;letter-spacing:.1em;border:1px solid rgba(255,34,85,.2);cursor:none;transition:all .2s;" onmouseover="this.style.background='rgba(255,34,85,.15)'" onmouseout="this.style.background='rgba(255,34,85,.08)'">🚪 LOGOUT</button>
+      </div>
     </div>
-    <div class="dash-main">
-      <div class="dash-header">
-        <div class="dash-title">OVERVIEW</div>
-        <div class="dash-sub">Welcome back, Admin — here's what's happening</div>
-      </div>
-      <div class="dash-cards">
-        <div class="dash-card"><div class="dc-label">TOTAL KEYS</div><div class="dc-value" style="color:var(--cyan)">1,247</div><div class="dc-sub">+23 this week</div></div>
-        <div class="dash-card"><div class="dc-label">ACTIVE USERS</div><div class="dc-value" style="color:var(--green)">892</div><div class="dc-sub">Online now: 34</div></div>
-        <div class="dash-card"><div class="dc-label">REVENUE</div><div class="dc-value" style="color:var(--gold)">$3.8K</div><div class="dc-sub">This month</div></div>
-        <div class="dash-card"><div class="dc-label">DOWNLOADS</div><div class="dc-value" style="color:var(--purp)">12.4K</div><div class="dc-sub">All time</div></div>
-      </div>
-      <div class="dash-grid2">
-        <div class="dash-section">
-          <div class="dash-sec-title">RECENT KEYS</div>
-          <div class="key-row"><span class="key-code">VELOX-LIFE-A3X9-K2M7-P8Q1</span><span class="key-status ks-active">ACTIVE</span></div>
-          <div class="key-row"><span class="key-code">VELOX-MONT-B7Y2-L5N3-R4W6</span><span class="key-status ks-used">USED</span></div>
-          <div class="key-row"><span class="key-code">VELOX-WEEK-C1Z8-M4O9-S2V5</span><span class="key-status ks-active">ACTIVE</span></div>
-          <div class="key-row"><span class="key-code">VELOX-DAIL-D6X4-N7P2-T8U3</span><span class="key-status ks-exp">EXPIRED</span></div>
-          <div class="key-row"><span class="key-code">VELOX-LIFE-E9Y1-O3Q8-U5W7</span><span class="key-status ks-active">ACTIVE</span></div>
-          <button class="gen-btn" onclick="genKey()">⚡ GENERATE NEW KEY</button>
-          <div id="gen-out" style="font-family:var(--font-mono);font-size:.75rem;color:var(--cyan);margin-top:10px;padding:10px;background:var(--bg);border-radius:4px;display:none"></div>
+
+    <!-- MAIN CONTENT -->
+    <div class="dash-main" id="dash-main-area">
+
+      <!-- ── OVERVIEW ── -->
+      <div id="dp-overview">
+        <div class="dash-header">
+          <div class="dash-title">OVERVIEW</div>
+          <div class="dash-sub">Welcome back, Admin — here's what's happening</div>
         </div>
-        <div class="dash-section">
-          <div class="dash-sec-title">DOWNLOADS THIS WEEK</div>
-          <div class="chart-bar-wrap">
-            <div class="chart-bar-row"><div class="cb-label">Mon</div><div class="cb-track"><div class="cb-fill" style="width:72%;background:var(--cyan)"></div></div><div class="cb-val">361</div></div>
-            <div class="chart-bar-row"><div class="cb-label">Tue</div><div class="cb-track"><div class="cb-fill" style="width:55%;background:var(--cyan)"></div></div><div class="cb-val">275</div></div>
-            <div class="chart-bar-row"><div class="cb-label">Wed</div><div class="cb-track"><div class="cb-fill" style="width:90%;background:var(--cyan)"></div></div><div class="cb-val">450</div></div>
-            <div class="chart-bar-row"><div class="cb-label">Thu</div><div class="cb-track"><div class="cb-fill" style="width:68%;background:var(--cyan)"></div></div><div class="cb-val">340</div></div>
-            <div class="chart-bar-row"><div class="cb-label">Fri</div><div class="cb-track"><div class="cb-fill" style="width:100%;background:var(--green)"></div></div><div class="cb-val">512</div></div>
-            <div class="chart-bar-row"><div class="cb-label">Sat</div><div class="cb-track"><div class="cb-fill" style="width:84%;background:var(--cyan)"></div></div><div class="cb-val">420</div></div>
-            <div class="chart-bar-row"><div class="cb-label">Sun</div><div class="cb-track"><div class="cb-fill" style="width:60%;background:var(--cyan)"></div></div><div class="cb-val">300</div></div>
+        <div class="dash-cards">
+          <div class="dash-card"><div class="dc-label">TOTAL KEYS</div><div class="dc-value" id="ov-keys" style="color:var(--cyan)">0</div><div class="dc-sub">Generated</div></div>
+          <div class="dash-card"><div class="dc-label">ACTIVE KEYS</div><div class="dc-value" id="ov-active" style="color:var(--green)">0</div><div class="dc-sub">In use</div></div>
+          <div class="dash-card"><div class="dc-label">TOTAL USERS</div><div class="dc-value" id="ov-users" style="color:var(--gold)">0</div><div class="dc-sub">Registered</div></div>
+          <div class="dash-card"><div class="dc-label">EXPIRED</div><div class="dc-value" id="ov-exp" style="color:var(--red)">0</div><div class="dc-sub">Keys expired</div></div>
+        </div>
+        <div class="dash-grid2">
+          <div class="dash-section">
+            <div class="dash-sec-title">LATEST KEYS</div>
+            <div id="ov-keys-list"></div>
+          </div>
+          <div class="dash-section">
+            <div class="dash-sec-title">LATEST USERS</div>
+            <div id="ov-users-list"></div>
           </div>
         </div>
       </div>
-    </div>
+
+      <!-- ── KEYS ── -->
+      <div id="dp-keys" style="display:none">
+        <div class="dash-header" style="display:flex;align-items:center;justify-content:space-between">
+          <div><div class="dash-title">KEYS MANAGER</div><div class="dash-sub">Generate, view, and delete keys</div></div>
+          <button class="gen-btn" style="width:auto;padding:10px 24px;margin:0" onclick="genKeyDash()">⚡ GENERATE KEY</button>
+        </div>
+        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+          <button onclick="filterKeys('all')" id="kf-all" style="padding:6px 16px;border-radius:100px;font-family:var(--font-mono);font-size:.7rem;letter-spacing:.08em;border:1px solid var(--cyan);color:var(--cyan);background:rgba(0,212,255,.08);cursor:none;">ALL</button>
+          <button onclick="filterKeys('ACTIVE')" id="kf-active" style="padding:6px 16px;border-radius:100px;font-family:var(--font-mono);font-size:.7rem;letter-spacing:.08em;border:1px solid var(--b2);color:var(--txt2);background:transparent;cursor:none;">ACTIVE</button>
+          <button onclick="filterKeys('USED')" id="kf-used" style="padding:6px 16px;border-radius:100px;font-family:var(--font-mono);font-size:.7rem;letter-spacing:.08em;border:1px solid var(--b2);color:var(--txt2);background:transparent;cursor:none;">USED</button>
+          <button onclick="filterKeys('EXPIRED')" id="kf-exp" style="padding:6px 16px;border-radius:100px;font-family:var(--font-mono);font-size:.7rem;letter-spacing:.08em;border:1px solid var(--b2);color:var(--txt2);background:transparent;cursor:none;">EXPIRED</button>
+        </div>
+        <div class="dash-section" style="padding:0">
+          <div style="display:grid;grid-template-columns:1fr 100px 120px 80px;gap:0;padding:10px 20px;border-bottom:1px solid var(--b1)">
+            <div style="font-family:var(--font-mono);font-size:.65rem;color:var(--txt2);letter-spacing:.12em">KEY</div>
+            <div style="font-family:var(--font-mono);font-size:.65rem;color:var(--txt2);letter-spacing:.12em">PLAN</div>
+            <div style="font-family:var(--font-mono);font-size:.65rem;color:var(--txt2);letter-spacing:.12em">STATUS</div>
+            <div style="font-family:var(--font-mono);font-size:.65rem;color:var(--txt2);letter-spacing:.12em">ACTION</div>
+          </div>
+          <div id="keys-table-body" style="max-height:400px;overflow-y:auto"></div>
+        </div>
+        <div id="gen-out-dash" style="font-family:var(--font-mono);font-size:.8rem;color:var(--cyan);margin-top:16px;padding:14px;background:var(--card);border:1px solid var(--b2);border-radius:8px;display:none;word-break:break-all"></div>
+      </div>
+
+      <!-- ── USERS ── -->
+      <div id="dp-users" style="display:none">
+        <div class="dash-header" style="display:flex;align-items:center;justify-content:space-between">
+          <div><div class="dash-title">USERS</div><div class="dash-sub">Registered users and their keys</div></div>
+          <button onclick="addUserPrompt()" class="gen-btn" style="width:auto;padding:10px 24px;margin:0">➕ ADD USER</button>
+        </div>
+        <div class="dash-section" style="padding:0">
+          <div style="display:grid;grid-template-columns:1fr 160px 120px 80px;gap:0;padding:10px 20px;border-bottom:1px solid var(--b1)">
+            <div style="font-family:var(--font-mono);font-size:.65rem;color:var(--txt2);letter-spacing:.12em">USERNAME</div>
+            <div style="font-family:var(--font-mono);font-size:.65rem;color:var(--txt2);letter-spacing:.12em">KEY</div>
+            <div style="font-family:var(--font-mono);font-size:.65rem;color:var(--txt2);letter-spacing:.12em">JOINED</div>
+            <div style="font-family:var(--font-mono);font-size:.65rem;color:var(--txt2);letter-spacing:.12em">ACTION</div>
+          </div>
+          <div id="users-table-body" style="max-height:450px;overflow-y:auto"></div>
+        </div>
+      </div>
+
+      <!-- ── ANALYTICS ── -->
+      <div id="dp-analytics" style="display:none">
+        <div class="dash-header"><div class="dash-title">ANALYTICS</div><div class="dash-sub">Key generation and usage stats</div></div>
+        <div class="dash-cards">
+          <div class="dash-card"><div class="dc-label">LIFETIME KEYS</div><div class="dc-value" id="an-life" style="color:var(--cyan)">0</div></div>
+          <div class="dash-card"><div class="dc-label">MONTHLY KEYS</div><div class="dc-value" id="an-mont" style="color:var(--green)">0</div></div>
+          <div class="dash-card"><div class="dc-label">WEEKLY KEYS</div><div class="dc-value" id="an-week" style="color:var(--gold)">0</div></div>
+          <div class="dash-card"><div class="dc-label">DAILY KEYS</div><div class="dc-value" id="an-dail" style="color:var(--purp)">0</div></div>
+        </div>
+        <div class="dash-section" style="margin-top:16px">
+          <div class="dash-sec-title">KEY STATUS BREAKDOWN</div>
+          <div class="chart-bar-wrap" id="analytics-bars"></div>
+        </div>
+      </div>
+
+      <!-- ── SETTINGS ── -->
+      <div id="dp-settings" style="display:none">
+        <div class="dash-header"><div class="dash-title">SETTINGS</div><div class="dash-sub">Admin panel configuration</div></div>
+        <div class="dash-section" style="max-width:480px">
+          <div class="dash-sec-title">CHANGE PASSWORD</div>
+          <div style="margin-bottom:14px">
+            <label style="display:block;font-family:var(--font-mono);font-size:.65rem;color:var(--txt2);letter-spacing:.12em;margin-bottom:6px">NEW PASSWORD</label>
+            <input id="new-pass" type="password" placeholder="Enter new password" style="width:100%;padding:11px 14px;border-radius:6px;background:var(--bg);color:var(--white);border:1px solid var(--b2);outline:none;font-family:var(--font-body);font-size:.95rem">
+          </div>
+          <button onclick="changePass()" style="padding:11px 28px;border-radius:6px;background:rgba(0,212,255,.08);color:var(--cyan);font-family:var(--font-mono);font-size:.7rem;letter-spacing:.1em;border:1px solid var(--b2);cursor:none;transition:all .2s" onmouseover="this.style.background='rgba(0,212,255,.15)'" onmouseout="this.style.background='rgba(0,212,255,.08)'">SAVE</button>
+          <div id="pass-msg" style="font-family:var(--font-mono);font-size:.7rem;color:var(--green);margin-top:10px;min-height:20px"></div>
+        </div>
+        <div class="dash-section" style="max-width:480px;margin-top:16px">
+          <div class="dash-sec-title">DANGER ZONE</div>
+          <button onclick="clearAllData()" style="padding:11px 28px;border-radius:6px;background:rgba(255,34,85,.08);color:var(--red);font-family:var(--font-mono);font-size:.7rem;letter-spacing:.1em;border:1px solid rgba(255,34,85,.2);cursor:none;transition:all .2s" onmouseover="this.style.background='rgba(255,34,85,.18)'" onmouseout="this.style.background='rgba(255,34,85,.08)'">🗑 CLEAR ALL DATA</button>
+          <div style="font-family:var(--font-mono);font-size:.65rem;color:var(--txt2);margin-top:8px">This deletes all keys and users. Cannot be undone.</div>
+        </div>
+      </div>
+
+    </div><!-- /dash-main -->
   </div>
   </div><!-- /dash-content -->
 </div>
 
 <!-- ════════════════════ BLOG PAGE ════════════════════ -->
-<div id="page-blog" class="page">
+<div id="page-blog" class="page soon-wrap">
+  <div class="soon-overlay"><div class="soon-line"></div><div class="soon-badge">COMING SOON</div><div class="soon-sub">Blog launching soon</div><div class="soon-line"></div></div>
   <section class="section">
     <div class="section-label">BLOG</div>
     <h2 class="section-title">LATEST UPDATES</h2>
@@ -1252,7 +1360,8 @@ footer {
 </div>
 
 <!-- ════════════════════ CONTACT PAGE ════════════════════ -->
-<div id="page-contact" class="page">
+<div id="page-contact" class="page soon-wrap">
+  <div class="soon-overlay"><div class="soon-line"></div><div class="soon-badge">COMING SOON</div><div class="soon-sub">Contact page launching soon</div><div class="soon-line"></div></div>
   <section class="section">
     <div class="section-label">CONTACT</div>
     <h2 class="section-title">GET IN TOUCH</h2>
@@ -1417,12 +1526,11 @@ document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
 // ── ADMIN LOGIN ─────────────────────────────────────────────────
 // بيانات الدخول — غيّرها حسب رغبتك
 const ADMIN_CREDS = {
-  'admin':  'velox2025',
-  'velox':  'admin123',
+  'admin':  'velox123',
 };
 
 function adminLogin() {
-  const user = document.getElementById('admin-user').value.trim().toLowerCase();
+  const user = document.getElementById('admin-user').value.trim();
   const pass = document.getElementById('admin-pass').value;
   const err  = document.getElementById('login-err');
 
@@ -1471,18 +1579,187 @@ function checkAdminSession() {
   }
 }
 
-// ── KEY GENERATOR ───────────────────────────────────────────────
-function genKey() {
+// ── DASHBOARD DATA (localStorage) ──────────────────────────────
+function loadDB() {
+  return {
+    keys:  JSON.parse(localStorage.getItem('vx-keys')  || '[]'),
+    users: JSON.parse(localStorage.getItem('vx-users') || '[]'),
+  };
+}
+function saveDB(db) {
+  localStorage.setItem('vx-keys',  JSON.stringify(db.keys));
+  localStorage.setItem('vx-users', JSON.stringify(db.users));
+}
+
+// ── DASHBOARD SWITCH ────────────────────────────────────────────
+function dashSwitch(el, panel) {
+  document.querySelectorAll('.dash-nav-item').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  ['overview','keys','users','analytics','settings'].forEach(p=>{
+    const el2 = document.getElementById('dp-'+p);
+    if(el2) el2.style.display = p===panel ? 'block' : 'none';
+  });
+  if(panel==='overview')   renderOverview();
+  if(panel==='keys')       renderKeys('all');
+  if(panel==='users')      renderUsers();
+  if(panel==='analytics')  renderAnalytics();
+}
+
+// ── OVERVIEW ────────────────────────────────────────────────────
+function renderOverview() {
+  const db = loadDB();
+  document.getElementById('ov-keys').textContent   = db.keys.length;
+  document.getElementById('ov-active').textContent = db.keys.filter(k=>k.status==='ACTIVE').length;
+  document.getElementById('ov-users').textContent  = db.users.length;
+  document.getElementById('ov-exp').textContent    = db.keys.filter(k=>k.status==='EXPIRED').length;
+
+  const kl = document.getElementById('ov-keys-list');
+  kl.innerHTML = db.keys.length ? db.keys.slice(-5).reverse().map(k=>
+    `<div class="key-row"><span class="key-code" style="font-size:.72rem">${k.key}</span><span class="key-status ${k.status==='ACTIVE'?'ks-active':k.status==='USED'?'ks-used':'ks-exp'}">${k.status}</span></div>`
+  ).join('') : '<div style="color:var(--txt2);font-size:.85rem;padding:12px 0">No keys yet</div>';
+
+  const ul = document.getElementById('ov-users-list');
+  ul.innerHTML = db.users.length ? db.users.slice(-5).reverse().map(u=>
+    `<div class="key-row"><span style="flex:1;font-size:.88rem;color:var(--white)">${u.name}</span><span class="key-code" style="font-size:.7rem">${u.key||'—'}</span></div>`
+  ).join('') : '<div style="color:var(--txt2);font-size:.85rem;padding:12px 0">No users yet</div>';
+}
+
+// ── KEYS TABLE ──────────────────────────────────────────────────
+let keyFilter = 'all';
+function filterKeys(f) {
+  keyFilter = f;
+  ['all','ACTIVE','USED','EXPIRED'].forEach(x=>{
+    const btn = document.getElementById('kf-'+x.toLowerCase());
+    if(!btn) return;
+    const active = x===f || (x==='all'&&f==='all');
+    btn.style.borderColor = active ? 'var(--cyan)' : 'var(--b2)';
+    btn.style.color = active ? 'var(--cyan)' : 'var(--txt2)';
+    btn.style.background = active ? 'rgba(0,212,255,.08)' : 'transparent';
+  });
+  renderKeys(f);
+}
+function renderKeys(filter) {
+  const db = loadDB();
+  let keys = filter==='all' ? db.keys : db.keys.filter(k=>k.status===filter);
+  const body = document.getElementById('keys-table-body');
+  if(!keys.length) { body.innerHTML='<div style="padding:20px;color:var(--txt2);font-size:.85rem">No keys found</div>'; return; }
+  body.innerHTML = keys.slice().reverse().map((k,i)=> {
+    const ri = db.keys.length - 1 - (filter==='all' ? i : db.keys.indexOf(k));
+    return `<div style="display:grid;grid-template-columns:1fr 100px 120px 80px;gap:0;padding:10px 20px;border-bottom:1px solid var(--b1);align-items:center">
+      <span class="key-code" style="font-size:.72rem">${k.key}</span>
+      <span style="font-family:var(--font-mono);font-size:.7rem;color:var(--txt2)">${k.plan}</span>
+      <span class="key-status ${k.status==='ACTIVE'?'ks-active':k.status==='USED'?'ks-used':'ks-exp'}">${k.status}</span>
+      <div style="display:flex;gap:6px">
+        <button onclick="copyKey('${k.key}')" title="Copy" style="background:none;border:none;color:var(--txt2);font-size:.9rem;cursor:none;transition:color .2s" onmouseover="this.style.color='var(--cyan)'" onmouseout="this.style.color='var(--txt2)'">📋</button>
+        <button onclick="deleteKey(${ri})" title="Delete" style="background:none;border:none;color:var(--txt2);font-size:.9rem;cursor:none;transition:color .2s" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--txt2)'">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function copyKey(k) { navigator.clipboard?.writeText(k); }
+function deleteKey(i) {
+  if(!confirm('Delete this key?')) return;
+  const db=loadDB(); db.keys.splice(i,1); saveDB(db); renderKeys(keyFilter);
+}
+
+// ── GEN KEY ─────────────────────────────────────────────────────
+function genKey() {} // legacy stub
+function genKeyDash() {
   const plans = ['LIFE','MONT','WEEK','DAIL'];
   const plan = plans[Math.floor(Math.random()*4)];
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const seg = n => Array.from({length:n},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
   const key = `VELOX-${plan}-${seg(4)}-${seg(4)}-${seg(4)}`;
-  const out = document.getElementById('gen-out');
-  out.style.display = 'block';
-  out.textContent = key;
-  navigator.clipboard?.writeText(key);
+  const db = loadDB();
+  db.keys.push({ key, plan, status:'ACTIVE', created: new Date().toISOString().slice(0,10) });
+  saveDB(db);
+  const out = document.getElementById('gen-out-dash');
+  out.style.display='block';
+  out.innerHTML = `<span style="color:var(--txt2)">Generated: </span>${key} <button onclick="navigator.clipboard?.writeText('${key}');this.textContent='✓ Copied!';setTimeout(()=>this.textContent='Copy',2000)" style="margin-left:12px;padding:3px 10px;border-radius:4px;background:rgba(0,212,255,.1);color:var(--cyan);font-family:var(--font-mono);font-size:.65rem;border:1px solid var(--b2);cursor:none">Copy</button>`;
+  renderKeys(keyFilter);
+  renderOverview();
 }
+
+// ── USERS ────────────────────────────────────────────────────────
+function renderUsers() {
+  const db = loadDB();
+  const body = document.getElementById('users-table-body');
+  if(!db.users.length) { body.innerHTML='<div style="padding:20px;color:var(--txt2);font-size:.85rem">No users yet — add one above</div>'; return; }
+  body.innerHTML = db.users.slice().reverse().map((u,ri)=> {
+    const i = db.users.length-1-ri;
+    return `<div style="display:grid;grid-template-columns:1fr 160px 120px 80px;gap:0;padding:12px 20px;border-bottom:1px solid var(--b1);align-items:center">
+      <span style="color:var(--white);font-size:.9rem;font-weight:600">${u.name}</span>
+      <span class="key-code" style="font-size:.7rem">${u.key||'—'}</span>
+      <span style="font-family:var(--font-mono);font-size:.7rem;color:var(--txt2)">${u.joined}</span>
+      <button onclick="deleteUser(${i})" title="Delete" style="background:none;border:none;color:var(--txt2);font-size:.9rem;cursor:none;transition:color .2s" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--txt2)'">🗑</button>
+    </div>`;
+  }).join('');
+}
+function addUserPrompt() {
+  const name = prompt('Username:');
+  if(!name) return;
+  const key = prompt('Key (leave empty if none):') || '';
+  const db = loadDB();
+  db.users.push({ name: name.trim(), key: key.trim(), joined: new Date().toISOString().slice(0,10) });
+  saveDB(db);
+  renderUsers();
+  renderOverview();
+}
+function deleteUser(i) {
+  if(!confirm('Delete this user?')) return;
+  const db=loadDB(); db.users.splice(i,1); saveDB(db); renderUsers();
+}
+
+// ── ANALYTICS ───────────────────────────────────────────────────
+function renderAnalytics() {
+  const db = loadDB();
+  ['LIFE','MONT','WEEK','DAIL'].forEach(p=>{
+    const el = document.getElementById('an-'+p.toLowerCase());
+    if(el) el.textContent = db.keys.filter(k=>k.plan===p).length;
+  });
+  const bars = document.getElementById('analytics-bars');
+  const total = db.keys.length || 1;
+  const statuses = [
+    {lbl:'Active',  count:db.keys.filter(k=>k.status==='ACTIVE').length,  color:'var(--cyan)'},
+    {lbl:'Used',    count:db.keys.filter(k=>k.status==='USED').length,    color:'var(--green)'},
+    {lbl:'Expired', count:db.keys.filter(k=>k.status==='EXPIRED').length, color:'var(--red)'},
+  ];
+  bars.innerHTML = statuses.map(s=>
+    `<div class="chart-bar-row">
+      <div class="cb-label">${s.lbl}</div>
+      <div class="cb-track"><div class="cb-fill" style="width:${Math.round(s.count/total*100)}%;background:${s.color}"></div></div>
+      <div class="cb-val">${s.count}</div>
+    </div>`
+  ).join('');
+}
+
+// ── SETTINGS ────────────────────────────────────────────────────
+function changePass() {
+  const np = document.getElementById('new-pass').value;
+  if(!np) return;
+  ADMIN_CREDS['admin'] = np;
+  document.getElementById('pass-msg').textContent = '✓ Password changed (session only)';
+  document.getElementById('new-pass').value = '';
+}
+function clearAllData() {
+  if(!confirm('Delete ALL keys and users? This cannot be undone!')) return;
+  localStorage.removeItem('vx-keys');
+  localStorage.removeItem('vx-users');
+  renderOverview();
+  alert('All data cleared.');
+}
+
+// ── LOGOUT ──────────────────────────────────────────────────────
+function adminLogout() {
+  sessionStorage.removeItem('velox-admin');
+  document.getElementById('dash-login-gate').style.display='flex';
+  document.getElementById('dash-content').style.display='none';
+}
+
+// Init overview on load
+document.addEventListener('DOMContentLoaded', ()=>{
+  setTimeout(()=>{ if(sessionStorage.getItem('velox-admin')) renderOverview(); }, 100);
+});
 </script>
 </body>
 </html>
